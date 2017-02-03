@@ -30,8 +30,7 @@
 		</div>
    	  
 
-	    <div id="mapid" style="height: 440px; border: 1px solid #AAA;"></div>
-
+	    <div id="mapid" style="height: 100%; border: 1px solid #AAA;"></div>
 
     </body>
 
