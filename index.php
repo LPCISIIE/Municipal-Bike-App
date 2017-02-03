@@ -1,56 +1,77 @@
 <?php
 //header("Content-Type: application/xml");
 
-function debug($data) {
-    die('<pre>' . print_r($data,true) . '</pre>');
-}
-
 function getIP() {
     $ip = $_SERVER['REMOTE_ADDR'];
     return ($ip == "::1") ? "" : $ip;
 }
 
 
+function debug($object) {
+    header("Content-Type: application/xml");;
+    die($object->asXML());
+}
 
+$opts = array('http' => array('proxy' => 'www-cache:3128', "request_fulluri" => true));
+$context = stream_context_create($opts);
 
-// Proxy$opts = array('http' => array('proxy'=> 'tcp://127.0.0.1:8080', 'request_fulluri'=> true));
-//$context = stream_context_create($opts);
+$location = simplexml_load_string(file_get_contents('http://freegeoip.net/xml/'.getIP(), false, $context)) ;
 
-$location = simplexml_load_string(file_get_contents('http://freegeoip.net/xml/'.getIP())) ;
 $weather_api = 'http://www.infoclimat.fr/public-api/gfs/xml?_ll='.$location->Latitude.','.$location->Longitude.'&_auth=ARsDFFIsBCZRfFtsD3lSe1Q8ADUPeVRzBHgFZgtuAH1UMQNgUTNcPlU5VClSfVZkUn8AYVxmVW0Eb1I2WylSLgFgA25SNwRuUT1bPw83UnlUeAB9DzFUcwR4BWMLYwBhVCkDb1EzXCBVOFQoUmNWZlJnAH9cfFVsBGRSPVs1UjEBZwNkUjIEYVE6WyYPIFJjVGUAZg9mVD4EbwVhCzMAMFQzA2JRMlw5VThUKFJiVmtSZQBpXGtVbwRlUjVbKVIuARsDFFIsBCZRfFtsD3lSe1QyAD4PZA%3D%3D&_c=19f3aa7d766b6ba91191c8be71dd1ab2';
-$weather = simplexml_load_string(file_get_contents($weather_api)) ;
-//echo $weather->echeance->asXML();
 
-# LOAD XML FILE
-$XML = $weather->echeance;
+$weather = simplexml_load_string(file_get_contents($weather_api, false, $context)) or die('Unable to load weather API') ;
+$bikes = simplexml_load_string(file_get_contents('http://www.velostanlib.fr/service/carto', false, $context)) or die('Unable to load bikes API');
+
+
+
+# MERGING XML FILES
+
+$XML = new SimpleXMLElement('<application></application>');
+
+$node = $XML->addChild('user');
+$node->addAttribute('latitude',$location->Latitude);
+$node->addAttribute('longitude',$location->Longitude);
+
+$node = $XML->addChild('weather');
+
+foreach ($weather->echeance as $echeance) {
+    $child = $node->addChild('day');
+    foreach( $echeance->attributes() as $key => $value ) {
+        $child->addAttribute($key, $value);
+        foreach ($echeance->temperature->level as $temperature) {
+            $greatChild = $child->addChild('temperature', $temperature[0]);
+            foreach ($temperature->attributes() as $key2 => $value2) {
+                $greatChild->addAttribute($key2, $value2);
+            }
+        }
+    }
+}
+
+$node = $XML->addChild('velostan');
+
+foreach ($bikes->markers->marker as $marker) {
+    $child = $node->addChild('marker');
+    foreach( $marker->attributes() as $key => $value ) {
+        $child->addAttribute( $key, $value );
+    }
+
+    $station = simplexml_load_string(file_get_contents('http://www.velostanlib.fr/service/stationdetails/nancy/'.$marker['number'], false, $context)) or die('Unable to load bikes API');
+    $child = $child->addChild('station');
+    $child->addAttribute('available', $station->available);
+    $child->addAttribute('free', $station->free);
+    $child->addAttribute('total', $station->total);
+}
+
+//debug($XML);
 
 
 # START XSLT
 $xslt = new XSLTProcessor();
 
-# IMPORT STYLESHEET 1
+# IMPORT STYLESHEET
 $XSL = new DOMDocument();
 $XSL->load('style.xsl');
 $xslt->importStylesheet( $XSL );
 
 #PRINT
 print $xslt->transformToXML( $XML );
-
-
-echo "
-
-<script>
-
-
-	var mymap = L.map('mapid').setView([$location->Latitude, $location->Longitude], 13);
-
-	L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoieGNob3BpbiIsImEiOiJjaXluMXg0cTAwMDBwM3VwZnN0Y2ZxM3JmIn0.Hfr7AY-5aNpongUyCXdOUg', {
-		maxZoom: 18,
-		attribution: 'Map data &copy; <a href=\"http://openstreetmap.org\">OpenStreetMap</a> contributors, ' +
-			'<a href=\"http://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, ' +
-			'Imagery © <a href=\"http://mapbox.com\">Mapbox</a>',
-		id: 'mapbox.streets'
-	}).addTo(mymap)
-
-
-</script>";
