@@ -36,7 +36,7 @@
 				L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoieGNob3BpbiIsImEiOiJjaXluMXg0cTAwMDBwM3VwZnN0Y2ZxM3JmIn0.Hfr7AY-5aNpongUyCXdOUg', {
 						     maxZoom: 18 ,attribution: 'Xavier CHOPIN and Alexis WURTH © <a href="http://univ-lorraine.fr">University of Lorraine</a>',id: 'mapbox.streets'
 				}).addTo(mymap)
-			    <xsl:apply-templates select="application/velostan"/>
+			        <xsl:apply-templates select="application/velostan"/>
 			</script>
 		</body>
 	  </html>
@@ -44,20 +44,16 @@
 
 
 	<xsl:template match="day">
-		<div class="column">
-			<p>
-				In <xsl:value-of select="@hour"/> hours <br/>  <br/>
-				<i class='large cloud icon'></i> <xsl:value-of select="format-number(temperature[@val='sol']-273.15,'#')"/> °C <br/>
-			</p>
-        </div>
+	    <div class="column">
+	      <p>
+		In <xsl:value-of select="@hour"/> hours <br/>  <br/>
+	        <i class='large cloud icon'></i> <xsl:value-of select="format-number(temperature[@val='sol']-273.15,'#')"/> °C <br/>
+              </p>
+      	    </div>
 	</xsl:template>
 
 	<xsl:template match="marker">
-
 		L.marker([<xsl:value-of select="@lat"/>, <xsl:value-of select="@lng"/>]).addTo(mymap).bindPopup("<b>"+ bike +"<xsl:value-of select="@address"/></b><br/> This place can host <xsl:value-of select="station/@total"/> bikes  <br/> <xsl:value-of select="station/@available"/> bikes are available <br/> <xsl:value-of select="station/@free"/> parking places are available .");
 	</xsl:template>
-
-
-
 
 </xsl:stylesheet>
