@@ -1,5 +1,4 @@
 <?php
-//header("Content-Type: application/xml");
 
 function getIP() {
     $ip = $_SERVER['REMOTE_ADDR'];
@@ -7,10 +6,6 @@ function getIP() {
 }
 
 
-function debug($object) {
-    header("Content-Type: application/xml");;
-    die($object->asXML());
-}
 
 $opts = array('http' => array('proxy' => 'www-cache:3128', "request_fulluri" => true));
 $context = stream_context_create($opts);
@@ -61,8 +56,6 @@ foreach ($bikes->markers->marker as $marker) {
     $child->addAttribute('free', $station->free);
     $child->addAttribute('total', $station->total);
 }
-
-//debug($XML);
 
 
 # START XSLT
