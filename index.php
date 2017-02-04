@@ -1,14 +1,12 @@
 <?php
 
+$opts = array('http' => array('proxy' => 'www-cache:3128', "request_fulluri" => true));
+$context = stream_context_create($opts);
+
 function getIP() {
     $ip = $_SERVER['REMOTE_ADDR'];
     return ($ip == "::1") ? "" : $ip;
 }
-
-
-
-$opts = array('http' => array('proxy' => 'www-cache:3128', "request_fulluri" => true));
-$context = stream_context_create($opts);
 
 $location = simplexml_load_string(file_get_contents('http://freegeoip.net/xml/'.getIP(), false, $context)) ;
 
@@ -16,7 +14,6 @@ $weather_api = 'http://www.infoclimat.fr/public-api/gfs/xml?_ll='.$location->Lat
 
 $weather = simplexml_load_string(file_get_contents($weather_api, false, $context)) or die('Unable to load weather API') ;
 $bikes = simplexml_load_string(file_get_contents('http://www.velostanlib.fr/service/carto', false, $context)) or die('Unable to load bikes API');
-
 
 
 # MERGING XML FILES
